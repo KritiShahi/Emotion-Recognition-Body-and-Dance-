@@ -1,39 +1,166 @@
-# Emotion-Recognition-Body-and-Dance
+# Emotion Recognition in Body and Dance
+
+## Overview
+This project builds an end-to-end system for recognizing human emotions from body movement and dance sequences, without using facial expressions or speech. The goal is to understand emotion purely from posture, motion dynamics, and full-body kinematics. The system uses pose-based modeling, feature engineering, and deep learning (LSTM & ST-GCN) to classify emotions such as Angry, Disgust, Fearful, Happy, Neutral, Sad, and Surprise.
+
+This repository contains all code notebooks, data processing scripts, models, and evaluation results developed for the project.
+
+## Repository Structure & File Descriptions
+**1. Kinematic_Dataset_and_Modelling.ipynb**
+
+Preprocessing pipeline for the Kinematic Actors Dataset:
+
+* Custom BVH parser to extract skeletal hierarchy & motion channels
+* Extraction of 3D joint trajectories (T × V × 3)
+* Motion-based feature engineering (velocity, acceleration, movement intensity)
+* Dataset construction with 1400+ samples
+* Creation of CSV-based engineered features
+
+**2. LSTM_ON_KINEMATICS.ipynb**
+
+Implements the full Motion-LSTM model:
+
+* Addition of motion features (position + velocity + acceleration)
+* Data augmentation (noise, Mixup)
+* Channel attention + bidirectional LSTM
+* Temporal attention module
+* Training loop with scheduler, gradient clipping, and checkpoint saving
+
+Evaluation: Confusion matrix, per-class accuracy, probability inspection, 5-fold cross-validation
+(Methods and evaluation summarized from report pages 6–13)
+
+**3. STGCN_Kinematic_Dataset.ipynb**
+
+Implementation of Spatio-Temporal Graph Convolutional Network (ST-GCN):
+
+* Skeleton graph construction
+* Motion normalization & resampling
+* Multi-attention ST-GCN architecture (temporal, spatial, channel attention)
+* Training + K-fold cross-validation
+* Per-class precision, recall, and F1 visualizations
+(Based on ST-GCN discussion pp. 5–10)
+
+**4. MLP_Experiments_(Kinematic_Dataset).ipynb**
+
+Feature-based classification using engineered features:
+
+* Mutual Information–based feature selection
+* Optuna hyperparameter optimization
+* MLP classifier achieving ≈60% accuracy
+
+**5. 640_project_dataset_building_and_testing_on_l...ipynb**
+
+Initial modeling tests, early data inspection, and prototype experiments (first modeling stage).
+
+**6. Final_Project_640.ipynb**
+
+Covers EMOKINE dataset experiments:
+
+* 2D & 3D pose extraction
+* LSTM and Transformer tests
+* Classical ML with engineered features
+* Leave-One-Out Cross-Validation results (~3.7% generalization)
+
+**7. features_dataset.csv**
+
+CSV file containing engineered kinematic features (400–500 features per motion trial) used for ML baselines and MLP.
+
+**8. results/ Folder**
+
+Contains all saved outputs:
+
+* Confusion matrices
+* Cross-validation summaries
+* ST-GCN fold-wise results
+* Visualization plots
 
 
-## Overview  
-This project builds an end to end pipeline for emotion recognition using human body movements and dance sequences.
-Unlike traditional systems that rely on facial expressions or speech, this work focuses exclusively on movement dynamics, using pose estimation and machine learning to classify emotional states.
+## Dataset Details
 
+**Kinematic Actors Dataset (Primary Dataset)**
+1,402 BVH motion-capture trials labeled with 7 emotions.
+BVH files contain:
 
-## Contributions on Kinematic Actors Dataset
+HIERARCHY: skeletal structure (58 joints + root + end sites)
 
-### Dataset Preparation  
-- BVH files were parsed taking into consideration the skleton structure and capturing the motion of all the joints.
-- Movement based features were created along with statistical properties such as mean, std etc.
-- Total 1407 samples were used and distribution on emotion classes came out to be balanced.
+MOTION: frame-wise joint rotations & root translation
 
-### Modelling  
+This dataset provides rich 3D kinematic signals suitable for LSTM and ST-GCN models.
 
-- Machine Learning models acted as baseline and were further used to compute feature importance for the selection of top 50 features.
-- Random Forest, SVM and Gradient Boosting models were able to achieve the score ranging from 0.51 to 0.55 
-- MLP Classifier trained using parameters from optuna optimization on the top 50 engineered features was able to achieve 0.60 F1 score.
-- ST-GCN was applied by adding of motion based features and attention layers whcih gave validation accuracy of 0.64 (highest so far).
+**EMOKINE Dataset (Initial Exploration)**
+Used for early experiments; ultimately abandoned due to:
 
+* Very small sample size
+* Single performer → low variability
+* Subtle emotional differences
+* Deep models failed LOOCV (~3.7%)
 
-## EMOKINE Dataset
-The EmoKine Dataset is a specialized benchmark designed for emotion recognition from human body movements. Unlike most affective computing datasets that focus primarily on facial expressions or speech, EmoKine emphasizes the kinematic patterns of the full body, capturing how emotions are conveyed through posture, gesture, and motion. This makes it particularly relevant for computer vision systems that must operate in scenarios where facial cues are unreliable or unavailable.
+**Modeling Approaches**
+Baseline Models:
 
-EmoKine contains video recordings of participants performing acted emotional expressions across six universally recognized emotion categories: anger, sadness, joy, fear, disgust, and surprise. Each emotion is expressed through full-body actions rather than static poses, enabling the study of temporal motion cues. For each video, the dataset provides synchronized 2D keypoint sequences extracted using pose estimation tools such as MediaPipe or OpenPose. Some versions also include 3D pose representations, offering richer structural information for advanced temporal modeling.
+* SVM, Random Forest, Gradient Boosting -> Achieved 0.52–0.55 accuracy
+  Useful for feature importance & establishing benchmarks
 
-Each recording includes metadata such as emotion label, participant ID, and trial number, enabling subject-independent experiments. The pose sequences typically consist of 17–33 body joints tracked across all frames, forming time-series data suitable for LSTMs, GRUs, Transformers, and Graph Convolutional Networks.
+* MLP Classifier (Engineered Features) -> 150 MI-selected features
+  Optuna-optimized architecture -> Achieved 0.60 accuracy with low variance
 
-EmoKine is widely used in research on body-based emotion recognition, behavior understanding, and human–computer interaction, especially in settings like robotics or surveillance where facial visibility cannot be guaranteed. Its focus on movement dynamics makes it a valuable alternative to traditional facial-expression datasets, enabling the development of models that interpret emotion through body kinematics rather than appearance.
+* LSTM (Motion-LSTM)
+ Input: 3D joints + motion features
+ Channel + temporal attention
+ Motion augmentation (noise, Mixup)
+ Final accuracy: 0.593
+ Strongest classes: Neutral, Happy
 
-Overall, EmoKine provides a compact but highly expressive dataset that supports the study of how emotion is manifested through human motion, making it an important resource for kinematic analysis and multimodal affective computing.
+* ST-GCN
+  Graph-based model leveraging skeletal structure
+  Integrated multi-attention design
+  Cross-validation accuracy: 0.567
+  Strong for Neutral, Fearful, Happy
 
-## Future Work  
-- Commit all the clean codes. 
-- Finalize results and prepare final deliverables.
-- Work on bonus parts of the deliverable.
+**Evaluation Summary**
+Across all experiments:
 
+ 1. Neutral is the most consistently recognized emotion
+ 2. Surprise and Disgust are the hardest for models
+ 3. LSTM provides best sequence-level understanding
+ 4. ST-GCN captures spatial structure better than MLP and baselines
+ 5. MLP offers strong performance with engineered features
+ 6. EMOKINE results revealed dataset limitations → motivated switch
+ 7. K-fold and confusion-matrix evaluations confirm robustness and class-level behavior.
+
+**Setup Instructions**
+1. Clone the Repository
+
+  git clone https://github.com/<your-username>/Emotion-Recognition-Body-and-Dance.git
+  cd Emotion-Recognition-Body-and-Dance
+
+2. Install Dependencies
+   pip install -r requirements.txt
+
+3. Dataset Setup
+  Place BVH files from the Kinematic Actors Dataset into the folder:
+  /data/bvh_files/
+
+4. Run Preprocessing
+
+Use:
+
+Kinematic_Dataset_and_Modelling.ipynb
+to generate the cleaned dataset and engineered features.
+
+5. Train Models
+   * LSTM: LSTM_ON_KINEMATICS.ipynb
+
+   * ST-GCN: STGCN_Kinematic_Dataset.ipynb
+
+   * MLP: MLP_Experiments_(Kinematic_Dataset).ipynb
+
+   * View Results
+     All confusion matrices, metric summaries, and plots are stored in: /results/
+
+## Future Work
+
+1. Add multimodal integration (movement + audio or face)
+2. Improve augmentation strategies
+3. Build a web-based demo interface
+4. Extend dataset with more performers and naturalistic motion
