@@ -129,10 +129,8 @@ Across all experiments:
  7. K-fold and confusion-matrix evaluations confirm robustness and class-level behavior.
 
 **Setup Instructions**
-1. Clone the Repository
-
-  git clone https://github.com/<your-username>/Emotion-Recognition-Body-and-Dance.git
-  cd Emotion-Recognition-Body-and-Dance
+1. Clone the Repository : git clone https://github.com/<your-username>/Emotion-Recognition-Body-and-Dance.git
+cd Emotion-Recognition-Body-and-Dance
 
 2. Install Dependencies
    pip install -r requirements.txt
@@ -143,9 +141,7 @@ Across all experiments:
 
 4. Run Preprocessing
 
-Use:
-
-Kinematic_Dataset_and_Modelling.ipynb
+Use: Kinematic_Dataset_and_Modelling.ipynb
 to generate the cleaned dataset and engineered features.
 
 5. Train Models
